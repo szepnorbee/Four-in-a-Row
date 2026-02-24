@@ -2,153 +2,221 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Potyogós Amőba - 4 Nehézségi Szint</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Potyogós Amőba - Mobile Pro</title>
     <style>
+        /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
             --bg-color: #ecf0f1;
+            --text-color: #2c3e50;
             --board-color: #34495e;
             --board-shadow: #2c3e50;
             --slot-empty: #bdc3c7;
-            --p1-color: #e74c3c; /* Piros */
+            --p1-color: #e74c3c;
             --p1-shadow: #c0392b;
-            --p2-color: #f1c40f; /* Sárga */
+            --p2-color: #f1c40f;
             --p2-shadow: #f39c12;
-            --text-color: #2c3e50;
+            --winner-glow: rgba(255, 255, 255, 0.8);
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #ecf0f1;
+            --board-color: #2c3e50;
+            --board-shadow: #000000;
+            --slot-empty: #34495e;
+            --p1-color: #ff5252;
+            --p1-shadow: #b71c1c;
+            --p2-color: #ffeb3b;
+            --p2-shadow: #fbc02d;
+            --winner-glow: rgba(255, 255, 255, 0.5);
+        }
+
+        [data-theme="contrast"] {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --board-color: #444;
+            --board-shadow: #222;
+            --slot-empty: #ddd;
+            --p1-color: #007bff;
+            --p1-shadow: #0056b3;
+            --p2-color: #fd7e14;
+            --p2-shadow: #c65f08;
+            --winner-glow: rgba(0, 255, 0, 0.8);
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: var(--font-main);
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
             min-height: 100vh;
             margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
             user-select: none;
+            touch-action: manipulation; /* Zoom tiltása double-tap-nél */
+            transition: background 0.3s, color 0.3s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        h1 { margin-top: 20px; margin-bottom: 10px; }
+        h1 {
+            margin: 10px 0;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
 
-        /* Vezérlőpanel */
+        /* --- VEZÉRLŐK (Mobilra igazítva) --- */
         .controls {
-            background: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 15px;
             display: flex;
-            gap: 15px;
-            align-items: center;
             flex-wrap: wrap;
-            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
         select, button {
-            padding: 8px 12px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            cursor: pointer;
+            padding: 10px 12px; /* Nagyobb érintési felület */
+            font-size: 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.2);
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
         }
 
-        button {
+        button.primary {
             background-color: var(--board-color);
             color: white;
             border: none;
-            transition: background 0.2s;
+            font-weight: 600;
+            flex-grow: 1; /* Mobilon nyúljon meg */
         }
 
-        button:hover { background-color: var(--board-shadow); }
+        button:active { transform: scale(0.96); }
 
         .status {
+            width: 100%;
+            text-align: center;
             font-weight: bold;
-            font-size: 1.2rem;
-            margin-left: 10px;
+            font-size: 1.1rem;
+            padding: 5px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            margin-top: 5px;
         }
 
-        /* Játéktábla */
+        .theme-switch { display: flex; gap: 8px; }
+        .theme-btn {
+            width: 36px; height: 36px; /* Ujjbegy méret */
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.1);
+            padding: 0;
+        }
+
+        /* --- JÁTÉKTÁBLA (Reszponzív Grid) --- */
+        .game-board-wrapper {
+            width: 100%;
+            max-width: 500px; /* Tablet/Desktop limit */
+            aspect-ratio: 7/6; /* A tábla aránya fix */
+            position: relative;
+        }
+
         .game-board {
             background-color: var(--board-color);
-            padding: 15px;
-            border-radius: 15px;
-            box-shadow: 0 10px 0 var(--board-shadow);
+            width: 100%;
+            height: 100%;
+            padding: 2%; /* Relatív padding */
+            border-radius: 10px;
+            box-sizing: border-box;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-            position: relative;
+            gap: 1.5%;
+            transition: transform 0.1s;
         }
 
-        /* Oszlop (kattintáshoz) */
         .column {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            flex-direction: column; /* Fentről lefelé renderelés, de a logika fordított */
+            gap: 1.5%;
             cursor: pointer;
+            position: relative;
         }
 
-        .column:hover .slot.empty {
-            background-color: #dfe6e9; /* Hover effect */
+        /* Hover effekt csak PC-n, mobilon zavaró */
+        @media (hover: hover) {
+            .column:hover::after {
+                content: '';
+                position: absolute;
+                top: -5px; left: 0; right: 0; bottom: -5px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 50px;
+                pointer-events: none;
+            }
         }
 
-        /* Cella */
         .slot {
-            width: 50px;
-            height: 50px;
-            background-color: var(--bg-color); /* Lyuk a táblán */
+            width: 100%;
+            aspect-ratio: 1/1; /* Mindig kör alakú marad */
+            background-color: var(--bg-color);
             border-radius: 50%;
             position: relative;
-            box-shadow: inset 0 3px 5px rgba(0,0,0,0.2);
-            z-index: 1; /* A tábla lyuka */
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1; 
         }
 
-        /* Korongok */
         .piece {
-            width: 50px;
-            height: 50px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             z-index: 2;
-            transition: transform 0.1s ease-in; /* Fallback */
+            will-change: transform; /* Mobil GPU optimalizáció */
         }
 
         .piece.red {
-            background: radial-gradient(circle at 30% 30%, #ff7675, var(--p1-color));
-            box-shadow: 0 3px 0 var(--p1-shadow);
+            background: radial-gradient(circle at 35% 35%, #fff, var(--p1-color));
+            box-shadow: 0 2px 0 var(--p1-shadow);
         }
 
         .piece.yellow {
-            background: radial-gradient(circle at 30% 30%, #ffeaa7, var(--p2-color));
-            box-shadow: 0 3px 0 var(--p2-shadow);
+            background: radial-gradient(circle at 35% 35%, #fff, var(--p2-color));
+            box-shadow: 0 2px 0 var(--p2-shadow);
         }
 
-        /* Animáció az eséshez */
-        @keyframes dropBounce {
-            0% { transform: translateY(-500px); opacity: 0; }
-            60% { transform: translateY(0); opacity: 1; }
-            75% { transform: translateY(-20px); }
-            100% { transform: translateY(0); }
+        /* Effektek */
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-2px, 0, 0); }
+            40%, 60% { transform: translate3d(2px, 0, 0); }
         }
 
-        .falling {
-            animation: dropBounce 0.5s ease-out forwards;
-        }
-
-        /* Nyertes korongok jelölése */
-        .winner-slot {
-            box-shadow: 0 0 15px 5px white, inset 0 0 10px rgba(255,255,255,0.8);
-            transform: scale(1.1);
-            transition: all 0.5s;
-        }
-
-        /* Reszponzivitás */
-        @media (max-width: 500px) {
-            .slot, .piece { width: 40px; height: 40px; }
-            .game-board { gap: 5px; padding: 10px; }
-            .column { gap: 5px; }
+        .winner-slot { animation: winnerPulse 1s infinite alternate; z-index: 10; }
+        @keyframes winnerPulse {
+            from { box-shadow: 0 0 5px var(--winner-glow), inset 0 0 5px var(--winner-glow); transform: scale(1); }
+            to { box-shadow: 0 0 15px var(--winner-glow), inset 0 0 10px var(--winner-glow); transform: scale(1.05); }
         }
     </style>
 </head>
@@ -157,30 +225,96 @@
     <h1>Potyogós Amőba</h1>
 
     <div class="controls">
-        <label for="difficulty">Nehézség:</label>
-        <select id="difficulty">
-            <option value="1">Kezdő</option>
-            <option value="2">Közepes</option>
-            <option value="4">Haladó</option>
-            <option value="6">Mester</option>
-        </select>
-        <button onclick="game.resetGame()">Új játék</button>
-        <div class="status" id="status">Te jössz! (Piros)</div>
+        <div class="control-group" style="flex-grow: 1;">
+            <select id="difficulty">
+                <option value="1">Könnyű</option>
+                <option value="2">Közepes</option>
+                <option value="4" selected>Haladó</option>
+                <option value="6">Mester</option>
+            </select>
+            <button class="primary" onclick="game.resetGame()">Új Játék</button>
+        </div>
+        
+        <div class="control-group">
+            <button id="mute-btn" onclick="soundManager.toggleMute()">🔊</button>
+            <div class="theme-switch">
+                <button class="theme-btn" style="background:#ecf0f1" onclick="setTheme('light')"></button>
+                <button class="theme-btn" style="background:#333" onclick="setTheme('dark')"></button>
+                <button class="theme-btn" style="background:#2980b9" onclick="setTheme('contrast')"></button>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Indítás: Kattints a táblára!</div>
     </div>
 
-    <div id="board-container" class="game-board">
-        </div>
+    <div class="game-board-wrapper">
+        <div id="board-container" class="game-board"></div>
+    </div>
 
 <script>
 /**
- * Játék logika és AI implementáció
- * Logikai integritás ellenőrizve: 2024
+ * --- AUDIO RENDSZER ---
  */
+class SoundManager {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+    }
 
+    init() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    toggleMute() {
+        this.muted = !this.muted;
+        document.getElementById('mute-btn').innerText = this.muted ? '🔇' : '🔊';
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    }
+
+    playTone(freq, type, duration, vol = 0.1) {
+        if (this.muted || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+
+    playDrop() { 
+        this.init();
+        this.playTone(300, 'sine', 0.2, 0.2);
+        setTimeout(() => this.playTone(150, 'triangle', 0.1, 0.2), 50);
+    }
+
+    playError() { 
+        this.init();
+        this.playTone(150, 'sawtooth', 0.2, 0.1); 
+    }
+
+    playWin() {
+        this.init();
+        if (this.muted) return;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            setTimeout(() => this.playTone(freq, 'sine', 0.4, 0.2), i * 150);
+        });
+    }
+}
+const soundManager = new SoundManager();
+
+/**
+ * --- JÁTÉK MOTOR ---
+ */
 const ROWS = 6;
 const COLS = 7;
-const PLAYER = 1; // Ember (Piros)
-const AI = 2;     // Gép (Sárga)
+const PLAYER = 1; 
+const AI = 2;     
 const EMPTY = 0;
 
 class Connect4 {
@@ -188,298 +322,242 @@ class Connect4 {
         this.board = [];
         this.currentPlayer = PLAYER;
         this.gameActive = true;
-        this.difficulty = 1; // Alapértelmezett mélység
+        this.difficulty = 4;
         this.uiBoard = document.getElementById('board-container');
         this.statusDisplay = document.getElementById('status');
+        this.isDropping = false;
         
         this.initBoard();
         this.renderBoard();
         
-        // Eseményfigyelő a nehézség változtatására
         document.getElementById('difficulty').addEventListener('change', (e) => {
             this.difficulty = parseInt(e.target.value);
             this.resetGame();
         });
     }
 
-    // Inicializálja az üres táblát (mátrixot)
     initBoard() {
         this.board = Array(ROWS).fill().map(() => Array(COLS).fill(EMPTY));
     }
 
-    // Új játék indítása
     resetGame() {
         this.initBoard();
         this.currentPlayer = PLAYER;
         this.gameActive = true;
-        this.updateStatus("Te jössz! (Piros)");
+        this.isDropping = false;
+        this.updateStatus("Te jössz!");
         
-        // UI törlése (csak a korongokat vesszük ki, a rács marad)
-        const pieces = document.querySelectorAll('.piece');
-        pieces.forEach(p => p.remove());
-        
-        // Nyertes jelölések törlése
-        const slots = document.querySelectorAll('.slot');
-        slots.forEach(s => s.classList.remove('winner-slot'));
+        document.querySelectorAll('.piece').forEach(p => p.remove());
+        document.querySelectorAll('.slot').forEach(s => s.classList.remove('winner-slot'));
+        this.uiBoard.classList.remove('shake');
     }
 
-    // HTML Rács generálása
     renderBoard() {
         this.uiBoard.innerHTML = '';
         for (let c = 0; c < COLS; c++) {
             const colDiv = document.createElement('div');
             colDiv.classList.add('column');
             colDiv.dataset.col = c;
-            colDiv.onclick = () => this.handleHumanMove(c);
+            // Mobilon a touchstart azonnal reagál, de a click is kell fallbacknek
+            colDiv.addEventListener('click', (e) => {
+                e.preventDefault(); // Dupla esemény elkerülése
+                this.handleHumanMove(c);
+            });
 
-            for (let r = ROWS - 1; r >= 0; r--) { // Alulról felfelé építjük vizuálisan a flex-col miatt fordítva
+            for (let r = ROWS - 1; r >= 0; r--) { 
                 const slot = document.createElement('div');
                 slot.classList.add('slot');
-                slot.classList.add('empty');
-                slot.dataset.row = r; // Valós sor index
+                slot.dataset.row = r;
                 slot.dataset.col = c;
-                colDiv.appendChild(slot); // Fentről lefelé renderel, de a logika 0 = alja
+                colDiv.appendChild(slot);
             }
-            // A renderelésnél trükközni kell: a HTML-ben a legelső elem a teteje (row 5),
-            // de a logikában a 0. sor az alja.
-            // A CSS flex-direction: column miatt a DOM sorrend: Row 5, 4, 3, 2, 1, 0.
-            // Ezért a fenti ciklust 5-től 0-ig futtatom.
             this.uiBoard.appendChild(colDiv);
         }
     }
 
-    updateStatus(msg) {
-        this.statusDisplay.innerText = msg;
-    }
+    updateStatus(msg) { this.statusDisplay.innerText = msg; }
 
-    // Visszaadja az első üres sort az adott oszlopban, vagy -1-et ha tele van
     getNextOpenRow(board, col) {
         for (let r = 0; r < ROWS; r++) {
-            if (board[r][col] === EMPTY) {
-                return r;
-            }
+            if (board[r][col] === EMPTY) return r;
         }
         return -1;
     }
 
-    // Emberi lépés kezelése
     handleHumanMove(col) {
-        if (!this.gameActive || this.currentPlayer !== PLAYER) return;
+        if (!this.gameActive || this.currentPlayer !== PLAYER || this.isDropping) return;
+        soundManager.init(); // Első interakcióra audio init
 
         const row = this.getNextOpenRow(this.board, col);
         if (row !== -1) {
             this.makeMove(row, col, PLAYER);
-            
-            if (this.checkWin(this.board, PLAYER)) {
-                this.endGame(PLAYER);
-            } else if (this.checkDraw(this.board)) {
-                this.endGame(0);
-            } else {
+        } else {
+            soundManager.playError();
+        }
+    }
+
+    async makeMove(row, col, player) {
+        this.isDropping = true;
+        this.board[row][col] = player;
+        
+        await this.animateDrop(row, col, player);
+        this.triggerImpactEffect();
+
+        if (this.checkWin(this.board, player)) {
+            this.endGame(player);
+            this.isDropping = false;
+        } else if (this.checkDraw(this.board)) {
+            this.endGame(0);
+            this.isDropping = false;
+        } else {
+            this.isDropping = false;
+            if (player === PLAYER) {
                 this.currentPlayer = AI;
-                this.updateStatus("A gép gondolkodik...");
-                // Kis késleltetés, hogy a UI frissüljön és emberibb legyen
-                setTimeout(() => this.makeAIMove(), 100);
+                this.updateStatus("Gondolkodom...");
+                setTimeout(() => this.makeAIMove(), 50);
+            } else {
+                this.currentPlayer = PLAYER;
+                this.updateStatus("Te jössz!");
             }
         }
     }
 
-    // Korong elhelyezése a logikában és a UI-n
-    makeMove(row, col, player) {
-        this.board[row][col] = player;
-        this.animateDrop(row, col, player);
+    animateDrop(row, col, player) {
+        return new Promise(resolve => {
+            const slot = document.querySelector(`.slot[data-row='${row}'][data-col='${col}']`);
+            if (slot) {
+                // DINAMIKUS MAGASSÁG SZÁMÍTÁS MOBILHOZ
+                // Megmérjük, mekkora egy slot a képernyőn
+                const slotHeight = slot.getBoundingClientRect().height;
+                // A slotok között van gap (1.5%), ezt durván becsüljük vagy beleolvasztjuk
+                const gap = slotHeight * 0.1; // Kb 10% a gap aránya
+                const dropDistance = (ROWS - 1 - row) * (slotHeight + gap) + slotHeight;
+
+                const piece = document.createElement('div');
+                piece.classList.add('piece');
+                piece.classList.add(player === PLAYER ? 'red' : 'yellow');
+                
+                // CSS Transform-ot használunk, ami hardveresen gyorsított
+                piece.style.transform = `translateY(-${dropDistance}px)`;
+                piece.style.transition = "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+                
+                slot.appendChild(piece);
+                
+                // Kényszerített reflow
+                piece.offsetHeight; 
+                
+                // Zuhanás
+                piece.style.transform = "translateY(0)";
+
+                setTimeout(() => resolve(), 400);
+            } else {
+                resolve();
+            }
+        });
     }
 
-    animateDrop(row, col, player) {
-        // Megkeressük a megfelelő slotot a DOM-ban
-        // A DOM-ban a sorok fordítva vannak (fentről lefelé), a selector segít
-        const slot = document.querySelector(`.slot[data-row='${row}'][data-col='${col}']`);
-        
-        if (slot) {
-            const piece = document.createElement('div');
-            piece.classList.add('piece');
-            piece.classList.add(player === PLAYER ? 'red' : 'yellow');
-            piece.classList.add('falling');
-            slot.appendChild(piece);
-        }
+    triggerImpactEffect() {
+        soundManager.playDrop();
+        this.uiBoard.classList.remove('shake');
+        void this.uiBoard.offsetWidth;
+        this.uiBoard.classList.add('shake');
     }
 
     endGame(winner) {
         this.gameActive = false;
         if (winner === PLAYER) {
-            this.updateStatus("Gratulálok! Nyertél!");
+            this.updateStatus("Győzelem!");
+            soundManager.playWin();
             this.highlightWin(PLAYER);
         } else if (winner === AI) {
-            this.updateStatus("A gép nyert. Próbáld újra!");
+            this.updateStatus("Vesztettél.");
             this.highlightWin(AI);
         } else {
             this.updateStatus("Döntetlen!");
         }
     }
 
-    checkDraw(board) {
-        return board.every(row => row.every(cell => cell !== EMPTY));
-    }
-
-    // Győzelem ellenőrzése (vízszintes, függőleges, átlós)
-    // Visszatér: true/false. Opcionálisan visszaadja a nyertes koordinátákat.
     checkWin(board, player, returnCoords = false) {
-        // Vízszintes
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS - 3; c++) {
-                if (board[r][c] === player && board[r][c+1] === player && 
-                    board[r][c+2] === player && board[r][c+3] === player) {
-                    return returnCoords ? [[r,c], [r,c+1], [r,c+2], [r,c+3]] : true;
-                }
-            }
-        }
-        // Függőleges
-        for (let r = 0; r < ROWS - 3; r++) {
-            for (let c = 0; c < COLS; c++) {
-                if (board[r][c] === player && board[r+1][c] === player && 
-                    board[r+2][c] === player && board[r+3][c] === player) {
-                    return returnCoords ? [[r,c], [r+1,c], [r+2,c], [r+3,c]] : true;
-                }
-            }
-        }
-        // Pozitív átló (/)
-        for (let r = 0; r < ROWS - 3; r++) {
-            for (let c = 0; c < COLS - 3; c++) {
-                if (board[r][c] === player && board[r+1][c+1] === player && 
-                    board[r+2][c+2] === player && board[r+3][c+3] === player) {
-                    return returnCoords ? [[r,c], [r+1,c+1], [r+2,c+2], [r+3,c+3]] : true;
-                }
-            }
-        }
-        // Negatív átló (\)
-        for (let r = 3; r < ROWS; r++) {
-            for (let c = 0; c < COLS - 3; c++) {
-                if (board[r][c] === player && board[r-1][c+1] === player && 
-                    board[r-2][c+2] === player && board[r-3][c+3] === player) {
-                    return returnCoords ? [[r,c], [r-1,c+1], [r-2,c+2], [r-3,c+3]] : true;
-                }
-            }
-        }
+        // Ellenőrzés logika (változatlan)
+        // Horizontális
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS-3;c++)
+            if (board[r][c]===player && board[r][c+1]===player && board[r][c+2]===player && board[r][c+3]===player)
+                return returnCoords ? [[r,c],[r,c+1],[r,c+2],[r,c+3]] : true;
+        // Vertikális
+        for (let r=0;r<ROWS-3;r++) for (let c=0;c<COLS;c++)
+            if (board[r][c]===player && board[r+1][c]===player && board[r+2][c]===player && board[r+3][c]===player)
+                return returnCoords ? [[r,c],[r+1,c],[r+2,c],[r+3,c]] : true;
+        // Átlós /
+        for (let r=0;r<ROWS-3;r++) for (let c=0;c<COLS-3;c++)
+            if (board[r][c]===player && board[r+1][c+1]===player && board[r+2][c+2]===player && board[r+3][c+3]===player)
+                return returnCoords ? [[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]] : true;
+        // Átlós \
+        for (let r=3;r<ROWS;r++) for (let c=0;c<COLS-3;c++)
+            if (board[r][c]===player && board[r-1][c+1]===player && board[r-2][c+2]===player && board[r-3][c+3]===player)
+                return returnCoords ? [[r,c],[r-1,c+1],[r-2,c+2],[r-3,c+3]] : true;
         return false;
     }
 
+    checkDraw(board) { return board.every(row => row.every(cell => cell !== EMPTY)); }
+
     highlightWin(player) {
         const coords = this.checkWin(this.board, player, true);
-        if (coords) {
-            coords.forEach(([r, c]) => {
-                const slot = document.querySelector(`.slot[data-row='${r}'][data-col='${c}']`);
-                if (slot) slot.classList.add('winner-slot');
-            });
-        }
+        if (coords) coords.forEach(([r, c]) => {
+            const slot = document.querySelector(`.slot[data-row='${r}'][data-col='${c}']`);
+            if (slot) slot.classList.add('winner-slot');
+        });
     }
 
-    // --- AI Részleg (Minimax + Alpha-Beta Pruning) ---
-
+    // --- AI (Minimax) ---
     makeAIMove() {
-        // Mély másolatot nem készítünk mindenhol, mert lassú.
-        // Ehelyett visszavonjuk a lépéseket (backtracking) a minimaxban.
-        
         let col;
-        // Ha kezdő szint, néha random lépést tesz, de azért figyel a nyerésre
         if (this.difficulty === 1) {
-             // 30% esély teljesen random lépésre, különben kis mélységű keresés
              if (Math.random() < 0.3) {
-                 const validMoves = this.getValidLocations(this.board);
-                 col = validMoves[Math.floor(Math.random() * validMoves.length)];
-             } else {
-                 col = this.minimax(this.board, 2, -Infinity, Infinity, true)[1];
-             }
+                 const valid = this.getValidLocations(this.board);
+                 col = valid[Math.floor(Math.random() * valid.length)];
+             } else col = this.minimax(this.board, 2, -Infinity, Infinity, true)[1];
         } else {
-            // A minimax mélysége = difficulty szint
-            // Nehézség 6 esetén már "Mester" szint
             col = this.minimax(this.board, this.difficulty, -Infinity, Infinity, true)[1];
         }
-
-        // Ha valamiért undefined (pl. tele a tábla), random valid
-        if (col === undefined) {
-            const validMoves = this.getValidLocations(this.board);
-            col = validMoves[0];
-        }
-
+        if (col === undefined) col = this.getValidLocations(this.board)[0];
+        
         const row = this.getNextOpenRow(this.board, col);
         this.makeMove(row, col, AI);
-
-        if (this.checkWin(this.board, AI)) {
-            this.endGame(AI);
-        } else if (this.checkDraw(this.board)) {
-            this.endGame(0);
-        } else {
-            this.currentPlayer = PLAYER;
-            this.updateStatus("Te jössz! (Piros)");
-        }
     }
 
     getValidLocations(board) {
         const valid = [];
-        for (let c = 0; c < COLS; c++) {
-            if (board[ROWS-1][c] === EMPTY) valid.push(c);
-        }
-        
-        // Optimalizáció: A középső oszlopok értékesebbek, kezdjük a keresést ott.
-        // Ez segít az Alpha-Beta vágásnak hamarabb végezni.
-        valid.sort((a, b) => Math.abs(a - 3) - Math.abs(b - 3));
+        for (let c=0; c<COLS; c++) if (board[ROWS-1][c] === EMPTY) valid.push(c);
+        valid.sort((a,b) => Math.abs(a-3) - Math.abs(b-3));
         return valid;
     }
 
-    evaluateWindow(window, piece) {
+    evaluateWindow(w, p) {
         let score = 0;
-        const oppPiece = piece === AI ? PLAYER : AI;
-
-        let pieceCount = window.filter(c => c === piece).length;
-        let emptyCount = window.filter(c => c === EMPTY).length;
-        let oppCount = window.filter(c => c === oppPiece).length;
-
-        if (pieceCount === 4) score += 100;
-        else if (pieceCount === 3 && emptyCount === 1) score += 5;
-        else if (pieceCount === 2 && emptyCount === 2) score += 2;
-
-        if (oppCount === 3 && emptyCount === 1) score -= 4; // Erősen blokkolni
-
+        const o = p === AI ? PLAYER : AI;
+        let pc = w.filter(c => c === p).length;
+        let ec = w.filter(c => c === EMPTY).length;
+        let oc = w.filter(c => c === o).length;
+        if (pc === 4) score += 100;
+        else if (pc === 3 && ec === 1) score += 5;
+        else if (pc === 2 && ec === 2) score += 2;
+        if (oc === 3 && ec === 1) score -= 4;
         return score;
     }
 
     scorePosition(board, piece) {
         let score = 0;
-
-        // Középső oszlop preferálása
-        const centerArray = [];
-        for(let r=0; r<ROWS; r++) centerArray.push(board[r][3]);
-        const centerCount = centerArray.filter(c => c === piece).length;
-        score += centerCount * 3;
-
-        // Vízszintes
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS - 3; c++) {
-                const window = [board[r][c], board[r][c+1], board[r][c+2], board[r][c+3]];
-                score += this.evaluateWindow(window, piece);
-            }
-        }
-        // Függőleges
-        for (let c = 0; c < COLS; c++) {
-            for (let r = 0; r < ROWS - 3; r++) {
-                const window = [board[r][c], board[r+1][c], board[r+2][c], board[r+3][c]];
-                score += this.evaluateWindow(window, piece);
-            }
-        }
-        // Pozitív Átló
-        for (let r = 0; r < ROWS - 3; r++) {
-            for (let c = 0; c < COLS - 3; c++) {
-                const window = [board[r][c], board[r+1][c+1], board[r+2][c+2], board[r+3][c+3]];
-                score += this.evaluateWindow(window, piece);
-            }
-        }
-        // Negatív Átló
-        for (let r = 0; r < ROWS - 3; r++) {
-            for (let c = 0; c < COLS - 3; c++) {
-                const window = [board[r+3][c], board[r+2][c+1], board[r+1][c+2], board[r][c+3]];
-                score += this.evaluateWindow(window, piece);
-            }
-        }
-
+        const ca = []; for(let r=0;r<ROWS;r++) ca.push(board[r][3]);
+        score += ca.filter(c => c === piece).length * 3;
+        
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS-3;c++) 
+            score += this.evaluateWindow([board[r][c], board[r][c+1], board[r][c+2], board[r][c+3]], piece);
+        for (let c=0;c<COLS;c++) for (let r=0;r<ROWS-3;r++)
+            score += this.evaluateWindow([board[r][c], board[r+1][c], board[r+2][c], board[r+3][c]], piece);
+        for (let r=0;r<ROWS-3;r++) for (let c=0;c<COLS-3;c++)
+            score += this.evaluateWindow([board[r][c], board[r+1][c+1], board[r+2][c+2], board[r+3][c+3]], piece);
+        for (let r=0;r<ROWS-3;r++) for (let c=0;c<COLS-3;c++)
+            score += this.evaluateWindow([board[r+3][c], board[r+2][c+1], board[r+1][c+2], board[r][c+3]], piece);
         return score;
     }
 
@@ -488,62 +566,46 @@ class Connect4 {
     }
 
     minimax(board, depth, alpha, beta, maximizingPlayer) {
-        const validLocations = this.getValidLocations(board);
+        const valid = this.getValidLocations(board);
         const isTerminal = this.isTerminalNode(board);
-
         if (depth === 0 || isTerminal) {
             if (isTerminal) {
                 if (this.checkWin(board, AI)) return [1000000, undefined];
                 else if (this.checkWin(board, PLAYER)) return [-1000000, undefined];
-                else return [0, undefined]; // Döntetlen
-            } else {
-                return [this.scorePosition(board, AI), undefined];
-            }
+                else return [0, undefined];
+            } else return [this.scorePosition(board, AI), undefined];
         }
-
         if (maximizingPlayer) {
-            let value = -Infinity;
-            let column = validLocations[Math.floor(Math.random() * validLocations.length)];
-            
-            for (let col of validLocations) {
-                const row = this.getNextOpenRow(board, col);
-                board[row][col] = AI; // Lépés
-                const newScore = this.minimax(board, depth - 1, alpha, beta, false)[0];
-                board[row][col] = EMPTY; // Visszavonás (backtrack)
-
-                if (newScore > value) {
-                    value = newScore;
-                    column = col;
-                }
-                alpha = Math.max(alpha, value);
+            let val = -Infinity, col = valid[Math.floor(Math.random()*valid.length)];
+            for (let c of valid) {
+                const r = this.getNextOpenRow(board, c);
+                board[r][c] = AI;
+                const newScore = this.minimax(board, depth-1, alpha, beta, false)[0];
+                board[r][c] = EMPTY;
+                if (newScore > val) { val = newScore; col = c; }
+                alpha = Math.max(alpha, val);
                 if (alpha >= beta) break;
             }
-            return [value, column];
+            return [val, col];
         } else {
-            let value = Infinity;
-            let column = validLocations[Math.floor(Math.random() * validLocations.length)];
-
-            for (let col of validLocations) {
-                const row = this.getNextOpenRow(board, col);
-                board[row][col] = PLAYER; // Lépés
-                const newScore = this.minimax(board, depth - 1, alpha, beta, true)[0];
-                board[row][col] = EMPTY; // Visszavonás
-
-                if (newScore < value) {
-                    value = newScore;
-                    column = col;
-                }
-                beta = Math.min(beta, value);
+            let val = Infinity, col = valid[Math.floor(Math.random()*valid.length)];
+            for (let c of valid) {
+                const r = this.getNextOpenRow(board, c);
+                board[r][c] = PLAYER;
+                const newScore = this.minimax(board, depth-1, alpha, beta, true)[0];
+                board[r][c] = EMPTY;
+                if (newScore < val) { val = newScore; col = c; }
+                beta = Math.min(beta, val);
                 if (alpha >= beta) break;
             }
-            return [value, column];
+            return [val, col];
         }
     }
 }
 
-// Játék indítása
-const game = new Connect4();
+function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); }
 
+const game = new Connect4();
 </script>
 </body>
 </html>
