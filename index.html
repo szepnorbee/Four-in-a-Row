@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Potyogós Amőba - Mobile Pro</title>
+    <title>Potyogós Amőba - Multi & Single</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -11,10 +11,9 @@
             --text-color: #2c3e50;
             --board-color: #34495e;
             --board-shadow: #2c3e50;
-            --slot-empty: #bdc3c7;
-            --p1-color: #e74c3c;
+            --p1-color: #e74c3c; /* Piros */
             --p1-shadow: #c0392b;
-            --p2-color: #f1c40f;
+            --p2-color: #f1c40f; /* Sárga */
             --p2-shadow: #f39c12;
             --winner-glow: rgba(255, 255, 255, 0.8);
             --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -25,7 +24,6 @@
             --text-color: #ecf0f1;
             --board-color: #2c3e50;
             --board-shadow: #000000;
-            --slot-empty: #34495e;
             --p1-color: #ff5252;
             --p1-shadow: #b71c1c;
             --p2-color: #ffeb3b;
@@ -38,10 +36,9 @@
             --text-color: #000000;
             --board-color: #444;
             --board-shadow: #222;
-            --slot-empty: #ddd;
-            --p1-color: #007bff;
+            --p1-color: #007bff; /* Kék */
             --p1-shadow: #0056b3;
-            --p2-color: #fd7e14;
+            --p2-color: #fd7e14; /* Narancs */
             --p2-shadow: #c65f08;
             --winner-glow: rgba(0, 255, 0, 0.8);
         }
@@ -59,7 +56,7 @@
             padding: 10px;
             box-sizing: border-box;
             user-select: none;
-            touch-action: manipulation; /* Zoom tiltása double-tap-nél */
+            touch-action: manipulation;
             transition: background 0.3s, color 0.3s;
             -webkit-tap-highlight-color: transparent;
         }
@@ -72,7 +69,7 @@
             text-align: center;
         }
 
-        /* --- VEZÉRLŐK (Mobilra igazítva) --- */
+        /* --- VEZÉRLŐK --- */
         .controls {
             width: 100%;
             max-width: 500px;
@@ -81,34 +78,37 @@
             border-radius: 12px;
             margin-bottom: 15px;
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 10px;
-            align-items: center;
-            justify-content: space-between;
         }
 
-        .control-group {
+        .control-row {
             display: flex;
             gap: 8px;
             align-items: center;
+            justify-content: space-between;
+            width: 100%;
         }
 
         select, button {
-            padding: 10px 12px; /* Nagyobb érintési felület */
+            padding: 10px 12px;
             font-size: 14px;
             border-radius: 8px;
             border: 1px solid rgba(0,0,0,0.2);
             background: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
+            font-weight: 500;
         }
+
+        select { flex-grow: 1; }
 
         button.primary {
             background-color: var(--board-color);
             color: white;
             border: none;
             font-weight: 600;
-            flex-grow: 1; /* Mobilon nyúljon meg */
+            flex-grow: 1;
         }
 
         button:active { transform: scale(0.96); }
@@ -118,25 +118,30 @@
             text-align: center;
             font-weight: bold;
             font-size: 1.1rem;
-            padding: 5px;
+            padding: 8px;
             background: rgba(0,0,0,0.05);
             border-radius: 6px;
-            margin-top: 5px;
+            box-sizing: border-box;
         }
+
+        /* Játékos jelző a statusban */
+        .status span.p1-turn { color: var(--p1-color); }
+        .status span.p2-turn { color: var(--p2-color); }
 
         .theme-switch { display: flex; gap: 8px; }
         .theme-btn {
-            width: 36px; height: 36px; /* Ujjbegy méret */
+            width: 36px; height: 36px;
             border-radius: 50%;
             border: 2px solid rgba(0,0,0,0.1);
             padding: 0;
+            flex-grow: 0;
         }
 
-        /* --- JÁTÉKTÁBLA (Reszponzív Grid) --- */
+        /* --- JÁTÉKTÁBLA --- */
         .game-board-wrapper {
             width: 100%;
-            max-width: 500px; /* Tablet/Desktop limit */
-            aspect-ratio: 7/6; /* A tábla aránya fix */
+            max-width: 500px;
+            aspect-ratio: 7/6;
             position: relative;
         }
 
@@ -144,25 +149,23 @@
             background-color: var(--board-color);
             width: 100%;
             height: 100%;
-            padding: 2%; /* Relatív padding */
+            padding: 2%;
             border-radius: 10px;
             box-sizing: border-box;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 1.5%;
-            transition: transform 0.1s;
         }
 
         .column {
             display: flex;
-            flex-direction: column; /* Fentről lefelé renderelés, de a logika fordított */
+            flex-direction: column;
             gap: 1.5%;
             cursor: pointer;
             position: relative;
         }
 
-        /* Hover effekt csak PC-n, mobilon zavaró */
         @media (hover: hover) {
             .column:hover::after {
                 content: '';
@@ -176,7 +179,7 @@
 
         .slot {
             width: 100%;
-            aspect-ratio: 1/1; /* Mindig kör alakú marad */
+            aspect-ratio: 1/1;
             background-color: var(--bg-color);
             border-radius: 50%;
             position: relative;
@@ -191,7 +194,7 @@
             position: absolute;
             top: 0; left: 0;
             z-index: 2;
-            will-change: transform; /* Mobil GPU optimalizáció */
+            will-change: transform;
         }
 
         .piece.red {
@@ -204,7 +207,7 @@
             box-shadow: 0 2px 0 var(--p2-shadow);
         }
 
-        /* Effektek */
+        /* Animációk */
         .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake {
             10%, 90% { transform: translate3d(-1px, 0, 0); }
@@ -218,6 +221,9 @@
             from { box-shadow: 0 0 5px var(--winner-glow), inset 0 0 5px var(--winner-glow); transform: scale(1); }
             to { box-shadow: 0 0 15px var(--winner-glow), inset 0 0 10px var(--winner-glow); transform: scale(1.05); }
         }
+
+        /* Helper class a rejtéshez */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -225,17 +231,22 @@
     <h1>Potyogós Amőba</h1>
 
     <div class="controls">
-        <div class="control-group" style="flex-grow: 1;">
+        <div class="control-row">
+            <select id="game-mode">
+                <option value="pve">1 Játékos (vs CPU)</option>
+                <option value="pvp">2 Játékos (PvP)</option>
+            </select>
+            
             <select id="difficulty">
                 <option value="1">Könnyű</option>
                 <option value="2">Közepes</option>
                 <option value="4" selected>Haladó</option>
                 <option value="6">Mester</option>
             </select>
-            <button class="primary" onclick="game.resetGame()">Új Játék</button>
         </div>
-        
-        <div class="control-group">
+
+        <div class="control-row">
+            <button class="primary" onclick="game.resetGame()">Új Játék</button>
             <button id="mute-btn" onclick="soundManager.toggleMute()">🔊</button>
             <div class="theme-switch">
                 <button class="theme-btn" style="background:#ecf0f1" onclick="setTheme('light')"></button>
@@ -292,15 +303,9 @@ class SoundManager {
         this.playTone(300, 'sine', 0.2, 0.2);
         setTimeout(() => this.playTone(150, 'triangle', 0.1, 0.2), 50);
     }
-
-    playError() { 
-        this.init();
-        this.playTone(150, 'sawtooth', 0.2, 0.1); 
-    }
-
+    playError() { this.init(); this.playTone(150, 'sawtooth', 0.2, 0.1); }
     playWin() {
-        this.init();
-        if (this.muted) return;
+        this.init(); if (this.muted) return;
         [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
             setTimeout(() => this.playTone(freq, 'sine', 0.4, 0.2), i * 150);
         });
@@ -313,25 +318,40 @@ const soundManager = new SoundManager();
  */
 const ROWS = 6;
 const COLS = 7;
-const PLAYER = 1; 
-const AI = 2;     
+const PLAYER_1 = 1; // Piros
+const PLAYER_2 = 2; // Sárga (AI vagy 2. játékos)
 const EMPTY = 0;
 
 class Connect4 {
     constructor() {
         this.board = [];
-        this.currentPlayer = PLAYER;
+        this.currentPlayer = PLAYER_1;
         this.gameActive = true;
         this.difficulty = 4;
+        this.gameMode = 'pve'; // 'pve' vagy 'pvp'
+        this.isDropping = false;
+        
         this.uiBoard = document.getElementById('board-container');
         this.statusDisplay = document.getElementById('status');
-        this.isDropping = false;
         
         this.initBoard();
         this.renderBoard();
         
+        // Event Listeners
         document.getElementById('difficulty').addEventListener('change', (e) => {
             this.difficulty = parseInt(e.target.value);
+            this.resetGame();
+        });
+
+        document.getElementById('game-mode').addEventListener('change', (e) => {
+            this.gameMode = e.target.value;
+            // Nehézség választó elrejtése PvP módban
+            const diffSelect = document.getElementById('difficulty');
+            if (this.gameMode === 'pvp') {
+                diffSelect.classList.add('hidden');
+            } else {
+                diffSelect.classList.remove('hidden');
+            }
             this.resetGame();
         });
     }
@@ -342,10 +362,10 @@ class Connect4 {
 
     resetGame() {
         this.initBoard();
-        this.currentPlayer = PLAYER;
+        this.currentPlayer = PLAYER_1;
         this.gameActive = true;
         this.isDropping = false;
-        this.updateStatus("Te jössz!");
+        this.updateStatus();
         
         document.querySelectorAll('.piece').forEach(p => p.remove());
         document.querySelectorAll('.slot').forEach(s => s.classList.remove('winner-slot'));
@@ -358,10 +378,9 @@ class Connect4 {
             const colDiv = document.createElement('div');
             colDiv.classList.add('column');
             colDiv.dataset.col = c;
-            // Mobilon a touchstart azonnal reagál, de a click is kell fallbacknek
             colDiv.addEventListener('click', (e) => {
-                e.preventDefault(); // Dupla esemény elkerülése
-                this.handleHumanMove(c);
+                e.preventDefault();
+                this.handleColumnClick(c);
             });
 
             for (let r = ROWS - 1; r >= 0; r--) { 
@@ -375,7 +394,30 @@ class Connect4 {
         }
     }
 
-    updateStatus(msg) { this.statusDisplay.innerText = msg; }
+    updateStatus(msg) {
+        if (msg) {
+            this.statusDisplay.innerHTML = msg;
+            return;
+        }
+        
+        // Automatikus státusz generálás
+        if (!this.gameActive) return;
+
+        if (this.gameMode === 'pve') {
+            if (this.currentPlayer === PLAYER_1) {
+                this.statusDisplay.innerHTML = "Te jössz! <span class='p1-turn'>(Piros)</span>";
+            } else {
+                this.statusDisplay.innerText = "Gondolkodom...";
+            }
+        } else {
+            // PvP
+            if (this.currentPlayer === PLAYER_1) {
+                this.statusDisplay.innerHTML = "1. Játékos jön <span class='p1-turn'>(Piros)</span>";
+            } else {
+                this.statusDisplay.innerHTML = "2. Játékos jön <span class='p2-turn'>(Sárga)</span>";
+            }
+        }
+    }
 
     getNextOpenRow(board, col) {
         for (let r = 0; r < ROWS; r++) {
@@ -384,13 +426,17 @@ class Connect4 {
         return -1;
     }
 
-    handleHumanMove(col) {
-        if (!this.gameActive || this.currentPlayer !== PLAYER || this.isDropping) return;
-        soundManager.init(); // Első interakcióra audio init
+    handleColumnClick(col) {
+        if (!this.gameActive || this.isDropping) return;
+        
+        // PvE módban csak akkor kattinthatsz, ha te jössz
+        if (this.gameMode === 'pve' && this.currentPlayer !== PLAYER_1) return;
+
+        soundManager.init();
 
         const row = this.getNextOpenRow(this.board, col);
         if (row !== -1) {
-            this.makeMove(row, col, PLAYER);
+            this.makeMove(row, col, this.currentPlayer);
         } else {
             soundManager.playError();
         }
@@ -400,25 +446,45 @@ class Connect4 {
         this.isDropping = true;
         this.board[row][col] = player;
         
+        // Frissítjük a státuszt, hogy ne maradjon "Gondolkodom" animáció közben
+        if (this.gameMode === 'pve' && player === PLAYER_2) {
+             this.statusDisplay.innerText = "Lépek...";
+        }
+
         await this.animateDrop(row, col, player);
         this.triggerImpactEffect();
 
+        // Nyerés ellenőrzése
         if (this.checkWin(this.board, player)) {
             this.endGame(player);
             this.isDropping = false;
-        } else if (this.checkDraw(this.board)) {
+            return;
+        } 
+        
+        // Döntetlen ellenőrzése
+        if (this.checkDraw(this.board)) {
             this.endGame(0);
             this.isDropping = false;
-        } else {
-            this.isDropping = false;
-            if (player === PLAYER) {
-                this.currentPlayer = AI;
-                this.updateStatus("Gondolkodom...");
+            return;
+        }
+
+        // --- KÖR VÁLTÁS ---
+        this.isDropping = false;
+        
+        if (this.gameMode === 'pve') {
+            // PvE logika
+            if (player === PLAYER_1) {
+                this.currentPlayer = PLAYER_2;
+                this.updateStatus();
                 setTimeout(() => this.makeAIMove(), 50);
             } else {
-                this.currentPlayer = PLAYER;
-                this.updateStatus("Te jössz!");
+                this.currentPlayer = PLAYER_1;
+                this.updateStatus();
             }
+        } else {
+            // PvP logika
+            this.currentPlayer = (player === PLAYER_1) ? PLAYER_2 : PLAYER_1;
+            this.updateStatus();
         }
     }
 
@@ -426,33 +492,23 @@ class Connect4 {
         return new Promise(resolve => {
             const slot = document.querySelector(`.slot[data-row='${row}'][data-col='${col}']`);
             if (slot) {
-                // DINAMIKUS MAGASSÁG SZÁMÍTÁS MOBILHOZ
-                // Megmérjük, mekkora egy slot a képernyőn
                 const slotHeight = slot.getBoundingClientRect().height;
-                // A slotok között van gap (1.5%), ezt durván becsüljük vagy beleolvasztjuk
-                const gap = slotHeight * 0.1; // Kb 10% a gap aránya
+                const gap = slotHeight * 0.1;
                 const dropDistance = (ROWS - 1 - row) * (slotHeight + gap) + slotHeight;
 
                 const piece = document.createElement('div');
                 piece.classList.add('piece');
-                piece.classList.add(player === PLAYER ? 'red' : 'yellow');
+                piece.classList.add(player === PLAYER_1 ? 'red' : 'yellow');
                 
-                // CSS Transform-ot használunk, ami hardveresen gyorsított
                 piece.style.transform = `translateY(-${dropDistance}px)`;
                 piece.style.transition = "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
                 
                 slot.appendChild(piece);
-                
-                // Kényszerített reflow
-                piece.offsetHeight; 
-                
-                // Zuhanás
+                piece.offsetHeight; // Reflow
                 piece.style.transform = "translateY(0)";
 
                 setTimeout(() => resolve(), 400);
-            } else {
-                resolve();
-            }
+            } else resolve();
         });
     }
 
@@ -465,20 +521,24 @@ class Connect4 {
 
     endGame(winner) {
         this.gameActive = false;
-        if (winner === PLAYER) {
-            this.updateStatus("Győzelem!");
-            soundManager.playWin();
-            this.highlightWin(PLAYER);
-        } else if (winner === AI) {
-            this.updateStatus("Vesztettél.");
-            this.highlightWin(AI);
-        } else {
+        soundManager.playWin();
+        
+        if (winner === 0) {
             this.updateStatus("Döntetlen!");
+        } else {
+            this.highlightWin(winner);
+            if (this.gameMode === 'pve') {
+                if (winner === PLAYER_1) this.updateStatus("Győzelem!");
+                else this.updateStatus("Vesztettél.");
+            } else {
+                const color = winner === PLAYER_1 ? "Piros" : "Sárga";
+                this.statusDisplay.innerHTML = `Győztes: <span class="${winner === PLAYER_1 ? 'p1-turn' : 'p2-turn'}">${color}</span>!`;
+            }
         }
     }
 
+    // --- Win Logic & AI (Változatlan, csak a változó nevek igazítva) ---
     checkWin(board, player, returnCoords = false) {
-        // Ellenőrzés logika (változatlan)
         // Horizontális
         for (let r=0;r<ROWS;r++) for (let c=0;c<COLS-3;c++)
             if (board[r][c]===player && board[r][c+1]===player && board[r][c+2]===player && board[r][c+3]===player)
@@ -487,11 +547,10 @@ class Connect4 {
         for (let r=0;r<ROWS-3;r++) for (let c=0;c<COLS;c++)
             if (board[r][c]===player && board[r+1][c]===player && board[r+2][c]===player && board[r+3][c]===player)
                 return returnCoords ? [[r,c],[r+1,c],[r+2,c],[r+3,c]] : true;
-        // Átlós /
+        // Átlók
         for (let r=0;r<ROWS-3;r++) for (let c=0;c<COLS-3;c++)
             if (board[r][c]===player && board[r+1][c+1]===player && board[r+2][c+2]===player && board[r+3][c+3]===player)
                 return returnCoords ? [[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]] : true;
-        // Átlós \
         for (let r=3;r<ROWS;r++) for (let c=0;c<COLS-3;c++)
             if (board[r][c]===player && board[r-1][c+1]===player && board[r-2][c+2]===player && board[r-3][c+3]===player)
                 return returnCoords ? [[r,c],[r-1,c+1],[r-2,c+2],[r-3,c+3]] : true;
@@ -508,7 +567,6 @@ class Connect4 {
         });
     }
 
-    // --- AI (Minimax) ---
     makeAIMove() {
         let col;
         if (this.difficulty === 1) {
@@ -522,7 +580,7 @@ class Connect4 {
         if (col === undefined) col = this.getValidLocations(this.board)[0];
         
         const row = this.getNextOpenRow(this.board, col);
-        this.makeMove(row, col, AI);
+        this.makeMove(row, col, PLAYER_2);
     }
 
     getValidLocations(board) {
@@ -534,7 +592,7 @@ class Connect4 {
 
     evaluateWindow(w, p) {
         let score = 0;
-        const o = p === AI ? PLAYER : AI;
+        const o = p === PLAYER_2 ? PLAYER_1 : PLAYER_2;
         let pc = w.filter(c => c === p).length;
         let ec = w.filter(c => c === EMPTY).length;
         let oc = w.filter(c => c === o).length;
@@ -550,6 +608,7 @@ class Connect4 {
         const ca = []; for(let r=0;r<ROWS;r++) ca.push(board[r][3]);
         score += ca.filter(c => c === piece).length * 3;
         
+        // Horizontal, Vertical, Diagonal checks (simplified for brevity)
         for (let r=0;r<ROWS;r++) for (let c=0;c<COLS-3;c++) 
             score += this.evaluateWindow([board[r][c], board[r][c+1], board[r][c+2], board[r][c+3]], piece);
         for (let c=0;c<COLS;c++) for (let r=0;r<ROWS-3;r++)
@@ -562,7 +621,7 @@ class Connect4 {
     }
 
     isTerminalNode(board) {
-        return this.checkWin(board, PLAYER) || this.checkWin(board, AI) || this.getValidLocations(board).length === 0;
+        return this.checkWin(board, PLAYER_1) || this.checkWin(board, PLAYER_2) || this.getValidLocations(board).length === 0;
     }
 
     minimax(board, depth, alpha, beta, maximizingPlayer) {
@@ -570,16 +629,16 @@ class Connect4 {
         const isTerminal = this.isTerminalNode(board);
         if (depth === 0 || isTerminal) {
             if (isTerminal) {
-                if (this.checkWin(board, AI)) return [1000000, undefined];
-                else if (this.checkWin(board, PLAYER)) return [-1000000, undefined];
+                if (this.checkWin(board, PLAYER_2)) return [1000000, undefined];
+                else if (this.checkWin(board, PLAYER_1)) return [-1000000, undefined];
                 else return [0, undefined];
-            } else return [this.scorePosition(board, AI), undefined];
+            } else return [this.scorePosition(board, PLAYER_2), undefined];
         }
         if (maximizingPlayer) {
             let val = -Infinity, col = valid[Math.floor(Math.random()*valid.length)];
             for (let c of valid) {
                 const r = this.getNextOpenRow(board, c);
-                board[r][c] = AI;
+                board[r][c] = PLAYER_2;
                 const newScore = this.minimax(board, depth-1, alpha, beta, false)[0];
                 board[r][c] = EMPTY;
                 if (newScore > val) { val = newScore; col = c; }
@@ -591,7 +650,7 @@ class Connect4 {
             let val = Infinity, col = valid[Math.floor(Math.random()*valid.length)];
             for (let c of valid) {
                 const r = this.getNextOpenRow(board, c);
-                board[r][c] = PLAYER;
+                board[r][c] = PLAYER_1;
                 const newScore = this.minimax(board, depth-1, alpha, beta, true)[0];
                 board[r][c] = EMPTY;
                 if (newScore < val) { val = newScore; col = c; }
